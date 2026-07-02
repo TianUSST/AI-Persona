@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Persona Engine - MVP 测试</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #1a1a2e; color: #eee; min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px;
+        }
+        h1 { color: #e94560; margin-bottom: 5px; font-size: 24px; }
+        .subtitle { color: #888; font-size: 13px; margin-bottom: 20px; }
+
+        /* 状态栏 */
+        .status-bar {
+            display: flex; gap: 15px; margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .status-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            display: inline-block; margin-right: 5px;
+        }
+        .dot-red { background: #e94560; }
+        .dot-green { background: #4ecca3; }
+        .dot-yellow { background: #f0c040; }
+
+        /* 主容器 */
+        .container {
+            width: 100%; max-width: 700px;
+            background: #16213e; border-radius: 12px;
+            padding: 20px; margin-bottom: 20px;
+        }
+        .section-title {
+            color: #e94560; font-size: 14px; font-weight: bold;
+            margin-bottom: 10px; padding-bottom: 5px;
+            border-bottom: 1px solid #333;
+        }
+
+        /* 控制区 */
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .btn {
+            padding: 12px 24px; border: none; border-radius: 8px;
+            font-size: 15px; font-weight: bold; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: #e94560; color: white; }
+        .btn-primary:hover:not(:disabled) { background: #c73e54; }
+        .btn-secondary { background: #0f3460; color: #eee; }
+        .btn-secondary:hover:not(:disabled) { background: #1a4a7a; }
+        .btn-danger { background: #e74c3c; color: white; }
+
+        /* 文字输入 */
+        .text-input-area {
+            display: flex; gap: 10px; margin-bottom: 20px;
+        }
+        .text-input-area input {
+            flex: 1; padding: 10px 15px; border-radius: 8px;
+            border: 1px solid #333; background: #0f3460; color: #eee;
+            font-size: 14px;
+        }
+        .text-input-area input:focus { outline: none; border-color: #e94560; }
+
+        /* 对话区 */
+        .chat-area {
+            min-height: 300px; max-height: 500px; overflow-y: auto;
+            padding: 10px;
+        }
+        .msg {
+            margin-bottom: 12px; padding: 10px 14px;
+            border-radius: 10px; font-size: 14px; line-height: 1.6;
+            word-break: break-word;
+        }
+        .msg-user {
+            background: #0f3460; margin-left: 40px;
+            border-bottom-right-radius: 2px;
+        }
+        .msg-ai {
+            background: #1a1a2e; margin-right: 40px;
+            border-bottom-left-radius: 2px;
+        }
+        .msg-system {
+            background: transparent; color: #888;
+            font-size: 12px; text-align: center;
+            padding: 5px;
+        }
+        .msg-disclaimer {
+            background: #2d1b1b; color: #f0c040;
+            font-size: 12px; border: 1px solid #f0c04033;
+        }
+        .msg-label {
+            font-size: 11px; color: #888; margin-bottom: 4px;
+        }
+        .msg-user .msg-label { color: #4ecca3; }
+        .msg-ai .msg-label { color: #e94560; }
+
+        /* 录音指示器 */
+        .recording-indicator {
+            display: none; align-items: center; gap: 8px;
+            color: #e94560; font-size: 14px; margin-bottom: 10px;
+        }
+        .recording-indicator.active { display: flex; }
+        .rec-dot {
+            width: 12px; height: 12px; background: #e94560;
+            border-radius: 50%; animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🎤 AI Persona Engine</h1>
+    <p class="subtitle">张雪峰 AI 模拟 · MVP 测试页面</p>
+
+    <!-- 状态栏 -->
+    <div class="status-bar">
+        <span><span class="status-dot dot-red" id="wsDot"></span>WebSocket: <span id="wsStatus">未连接</span></span>
+        <span><span class="status-dot dot-red" id="asrDot"></span>ASR: <span id="asrStatus">未就绪</span></span>
+        <span>延迟: <span id="latency">-</span></span>
+    </div>
+
+    <div class="container">
+        <!-- 控制按钮 -->
+        <div class="controls">
+            <button class="btn btn-primary" id="connectBtn" onclick="connect()">连接服务器</button>
+            <button class="btn btn-danger" id="recordBtn" onmousedown="startRecording()" onmouseup="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()" disabled>
+                🎙️ 按住说话
+            </button>
+        </div>
+
+        <!-- 录音指示器 -->
+        <div class="recording-indicator" id="recordingIndicator">
+            <div class="rec-dot"></div>
+            <span>正在录音...（松开结束）</span>
+        </div>
+
+        <!-- 文字输入（调试用） -->
+        <div class="text-input-area">
+            <input type="text" id="textInput" placeholder="直接输入文字（跳过语音识别，调试用）" onkeydown="if(event.key==='Enter')sendText()">
+            <button class="btn btn-secondary" onclick="sendText()">发送</button>
+        </div>
+
+        <!-- 对话区 -->
+        <div class="section-title">对话记录</div>
+        <div class="chat-area" id="chatArea">
+            <div class="msg msg-system">点击「连接服务器」开始</div>
+        </div>
+    </div>
+
+    <script>
+    // ============================================================
+    // 全局状态
+    // ============================================================
+    let ws = null;
+    let sessionId = crypto.randomUUID();
+    let audioContext = null;
+    let mediaStream = null;
+    let scriptProcessor = null;
+    let isRecording = false;
+    let requestStartTime = 0;
+
+    const SAMPLE_RATE = 16000;  // 采样率（与后端 ASR 一致）
+
+    // ============================================================
+    // WebSocket 连接
+    // ============================================================
+    function connect() {
+        if (ws && ws.readyState === WebSocket.OPEN) return;
+
+        const url = `ws://${location.host}/ws/${sessionId}`;
+        ws = new WebSocket(url);
+
+        ws.onopen = () => {
+            updateWsStatus(true);
+            document.getElementById('recordBtn').disabled = false;
+            addSystemMsg('已连接到服务器，可以开始对话');
+            // 发送 session_start
+            send({ type: 'session_start', data: {} });
+        };
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            handleMessage(msg);
+        };
+
+        ws.onclose = () => {
+            updateWsStatus(false);
+            document.getElementById('recordBtn').disabled = true;
+            addSystemMsg('连接已断开');
+        };
+
+        ws.onerror = (err) => {
+            console.error('WebSocket error:', err);
+            addSystemMsg('连接错误');
+        };
+    }
+
+    function send(obj) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(obj));
+        }
+    }
+
+    // ============================================================
+    // 消息处理
+    // ============================================================
+    let currentAiMsg = null;  // 当前正在流式接收的 AI 消息元素
+
+    function handleMessage(msg) {
+        switch (msg.type) {
+            case 'status':
+                handleStatus(msg.data);
+                break;
+            case 'disclaimer':
+                addDisclaimerMsg(msg.data.text);
+                break;
+            case 'asr_partial':
+                // 可选：显示部分识别结果
+                break;
+            case 'asr_final':
+                if (msg.data.text) {
+                    addUserMsg(msg.data.text);
+                }
+                break;
+            case 'llm_chunk':
+                appendAiChunk(msg.data.text);
+                break;
+            case 'llm_done':
+                finalizeAiMsg();
+                // 计算延迟
+                if (requestStartTime) {
+                    const latency = Date.now() - requestStartTime;
+                    document.getElementById('latency').textContent = latency + 'ms';
+                }
+                break;
+            case 'error':
+                addSystemMsg('❌ ' + msg.data.message);
+                break;
+        }
+    }
+
+    function handleStatus(data) {
+        const status = data.status;
+        if (status === 'ready') {
+            updateAsrStatus(true);
+        } else if (status === 'processing') {
+            requestStartTime = Date.now();
+        }
+    }
+
+    // ============================================================
+    // 录音（PCM 16kHz int16）
+    // ============================================================
+    async function startRecording() {
+        if (isRecording) return;
+        isRecording = true;
+
+        document.getElementById('recordBtn').textContent = '🎙️ 松开结束';
+        document.getElementById('recordingIndicator').classList.add('active');
+
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    sampleRate: SAMPLE_RATE,
+                    channelCount: 1,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                }
+            });
+
+            audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: SAMPLE_RATE
+            });
+
+            const source = audioContext.createMediaStreamSource(mediaStream);
+
+            // 使用 ScriptProcessor 捕获 PCM 数据（AudioWorklet 更优但兼容性差些）
+            scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+
+            scriptProcessor.onaudioprocess = (e) => {
+                if (!isRecording) return;
+                const float32 = e.inputBuffer.getChannelData(0);
+                // float32 → int16
+                const int16 = new Int16Array(float32.length);
+                for (let i = 0; i < float32.length; i++) {
+                    int16[i] = Math.max(-32768, Math.min(32767, float32[i] * 32768));
+                }
+                // 转 base64 发送
+                const bytes = new Uint8Array(int16.buffer);
+                const base64 = btoa(String.fromCharCode(...bytes));
+                send({ type: 'audio_data', data: { audio: base64 } });
+            };
+
+            source.connect(scriptProcessor);
+            scriptProcessor.connect(audioContext.destination);
+
+            // 通知后端开始录音
+            send({ type: 'audio_start', data: {} });
+
+        } catch (err) {
+            console.error('录音失败:', err);
+            addSystemMsg('录音失败: ' + err.message);
+            isRecording = false;
+            document.getElementById('recordBtn').textContent = '🎙️ 按住说话';
+            document.getElementById('recordingIndicator').classList.remove('active');
+        }
+    }
+
+    function stopRecording() {
+        if (!isRecording) return;
+        isRecording = false;
+
+        document.getElementById('recordBtn').textContent = '🎙️ 按住说话';
+        document.getElementById('recordingIndicator').classList.remove('active');
+
+        // 停止录音设备
+        if (scriptProcessor) {
+            scriptProcessor.disconnect();
+            scriptProcessor = null;
+        }
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(t => t.stop());
+            mediaStream = null;
+        }
+        if (audioContext) {
+            audioContext.close();
+            audioContext = null;
+        }
+
+        // 通知后端录音结束
+        send({ type: 'audio_end', data: {} });
+    }
+
+    // ============================================================
+    // 文字发送（调试用）
+    // ============================================================
+    function sendText() {
+        const input = document.getElementById('textInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        input.value = '';
+        addUserMsg(text);
+        requestStartTime = Date.now();
+        send({ type: 'text_message', data: { text: text } });
+    }
+
+    // ============================================================
+    // UI 更新函数
+    // ============================================================
+    function updateWsStatus(connected) {
+        document.getElementById('wsDot').className = 'status-dot ' + (connected ? 'dot-green' : 'dot-red');
+        document.getElementById('wsStatus').textContent = connected ? '已连接' : '未连接';
+        document.getElementById('connectBtn').textContent = connected ? '已连接 ✓' : '连接服务器';
+    }
+
+    function updateAsrStatus(ready) {
+        document.getElementById('asrDot').className = 'status-dot ' + (ready ? 'dot-green' : 'dot-red');
+        document.getElementById('asrStatus').textContent = ready ? '就绪' : '未就绪';
+    }
+
+    function addSystemMsg(text) {
+        const chat = document.getElementById('chatArea');
+        const div = document.createElement('div');
+        div.className = 'msg msg-system';
+        div.textContent = text;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function addUserMsg(text) {
+        const chat = document.getElementById('chatArea');
+        const div = document.createElement('div');
+        div.className = 'msg msg-user';
+        div.innerHTML = '<div class="msg-label">🧑 你说</div>' + escapeHtml(text);
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function addDisclaimerMsg(text) {
+        const chat = document.getElementById('chatArea');
+        const div = document.createElement('div');
+        div.className = 'msg msg-disclaimer';
+        div.innerHTML = '⚠️ ' + escapeHtml(text);
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function appendAiChunk(text) {
+        const chat = document.getElementById('chatArea');
+
+        // 第一个 chunk 时创建新的 AI 消息元素
+        if (!currentAiMsg) {
+            currentAiMsg = document.createElement('div');
+            currentAiMsg.className = 'msg msg-ai';
+            currentAiMsg.innerHTML = '<div class="msg-label">🤖 张老师</div><span class="ai-content"></span>';
+            chat.appendChild(currentAiMsg);
+        }
+
+        // 追加文本
+        const content = currentAiMsg.querySelector('.ai-content');
+        content.textContent += text;
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function finalizeAiMsg() {
+        currentAiMsg = null;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    </script>
+</body>
+</html>
