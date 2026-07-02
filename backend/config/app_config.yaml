@@ -1,0 +1,69 @@
+# ============================================================
+# AI Persona Engine - 主配置文件
+# 所有模块的配置集中在此文件管理，通过 config_loader 加载
+# ============================================================
+
+# --- 服务器配置 ---
+server:
+  host: "0.0.0.0"           # 监听地址，0.0.0.0 表示允许外部访问
+  port: 8000                 # 监听端口
+  debug: true                # 调试模式（开启后 uvicorn 热重载）
+
+# --- 计算设备配置 ---
+device:
+  preferred: "auto"          # 首选设备：auto（自动检测）/ xpu（强制Intel GPU）/ cpu
+  xpu_device_id: 0           # XPU 设备编号（多卡时可切换）
+
+# --- ASR 语音识别配置 ---
+asr:
+  engine: "sensevoice"       # ASR 引擎选择（对应 backend/speech_interface/ 下的实现）
+  sensevoice:
+    model: "iic/SenseVoiceSmall"   # SenseVoice 模型（首次运行自动从 ModelScope 下载）
+    vad_model: "fsmn-vad"          # VAD 语音活动检测模型（用于检测用户是否说完）
+    language: "auto"               # 识别语言：auto（自动）/ zh（中文）/ en（英文）
+    use_itn: true                  # 是否启用逆文本正则化（数字、日期等标准化）
+    batch_size_s: 60               # 批处理音频长度（秒），影响内存占用
+
+# --- LLM 大语言模型配置 ---
+llm:
+  engine: "openai_compatible"      # LLM 引擎选择（使用 OpenAI 兼容协议）
+  openai_compatible:
+    base_url: "https://api.deepseek.com/v1"  # API 地址（支持 DeepSeek/Qwen/本地 Ollama 等）
+    api_key_env: "LLM_API_KEY"               # API Key 的环境变量名（不在配置中明文存储密钥）
+    model: "deepseek-chat"                   # 模型名称
+    max_tokens: 1024                         # 单次回复最大 token 数
+    temperature: 0.7                         # 生成温度（0=确定性，1=随机性）
+    stream: true                             # 是否启用流式生成（必须为 true 以支持实时交互）
+
+# --- TTS 语音合成配置 ---
+tts:
+  engine: "fish_speech"              # TTS 引擎选择
+  fish_speech:
+    model_path: "checkpoints/fish-speech-0.1.0"  # Fish Speech 模型路径
+    sample_rate: 44100                            # 输出音频采样率（Hz）
+    reference_audio: null                         # 声音克隆参考音频路径（null=使用默认音色）
+
+# --- Avatar 数字人配置 ---
+avatar:
+  engine: "liveportrait"             # Avatar 引擎选择
+  liveportrait:
+    model_path: "checkpoints/liveportrait"  # LivePortrait 模型路径
+    source_image: "assets/default_avatar.jpg"  # 默认数字人形象图片
+    fps: 25                                  # 输出视频帧率
+
+# --- 人格配置 ---
+persona:
+  active: "zhangxuefeng"                           # 当前激活的人格名称
+  directory: "backend/persona_interface"            # 人格配置目录（各人格为子文件夹）
+  max_history_turns: 10                            # 保留的最大对话轮数（超出时裁剪早期对话）
+
+# --- WebSocket 配置 ---
+websocket:
+  audio_chunk_duration_ms: 100     # 音频分片时长（毫秒），越小延迟越低但网络开销越大
+  max_message_size_mb: 10          # 单条 WebSocket 消息最大体积（MB）
+
+# --- 日志配置 ---
+logging:
+  level: "INFO"                    # 日志级别：DEBUG / INFO / WARNING / ERROR
+  file: "logs/app.log"             # 日志文件路径
+  rotation: "10 MB"                # 日志文件轮转大小（超过后自动新建文件）
