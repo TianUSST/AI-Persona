@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Virtual env / conda
+xpu_env/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Models and large files
+*.bin
+*.pt
+*.pth
+*.onnx
+*.safetensors
+models/
+checkpoints/
+
+# Audio/Video samples
+*.wav
+*.mp3
+*.mp4
+*.avi
+*.webm
+
+# Logs
+logs/
+*.log
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+.npm
+
+# Environment
+.env
+.env.local
+.env.production
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Claude Code
+.claude/plans/

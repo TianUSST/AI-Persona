@@ -1,0 +1,49 @@
+# ============================================================
+# AI Persona Engine - Python Dependencies
+# Environment: xpu_env (conda, Python 3.11, Intel ARC B580)
+# ============================================================
+
+# --- Backend Framework ---
+fastapi>=0.138.0
+uvicorn[standard]>=0.49.0
+websockets>=16.0
+python-multipart>=0.0.30
+
+# --- ASR: SenseVoice ---
+funasr>=1.3.0
+modelscope>=1.17.0
+
+# --- LLM ---
+openai>=2.44.0
+
+# --- TTS: Fish Speech ---
+fish-speech>=0.1.0
+
+# --- Avatar: LivePortrait ---
+onnxruntime>=1.27.0
+face-alignment>=1.5.0
+scikit-image>=0.26.0
+
+# --- Audio Processing ---
+librosa>=0.11.0
+soundfile>=0.14.0
+
+# --- Configuration ---
+pyyaml>=6.0
+python-dotenv>=1.2.0
+
+# --- Logging ---
+loguru>=0.7.0
+
+# --- Database / Cache ---
+redis>=8.0.0
+
+# --- Async ---
+aiofiles>=25.1.0
+
+# --- Testing ---
+pytest>=9.1.0
+
+# --- Utilities ---
+numpy>=1.26.0,<2.0
+tqdm>=4.67.0
