@@ -716,6 +716,7 @@ Phase 4   [ ] V2 - 人格系统 + 优化
 | 2026-07-02 | Phase 0.5 完成：配置系统 | app_config.yaml + config_loader(单例) + device(XPU/CPU) |
 | 2026-07-02 | Phase 1 完成：抽象接口层 | 5个ABC接口 + WebSocket协议(17种消息) + 连接管理器 |
 | 2026-07-02 | 协议采用 OpenAI 风格全 JSON | 音频 base64 编码，调试方便，MVP 阶段足够 |
+| 2026-07-02 | 张雪峰 Skill 嵌入项目 | 41KB→3层压缩：prompt.txt(4KB) + knowledge.md(5KB) + references(60KB) |
 
 ---
 
