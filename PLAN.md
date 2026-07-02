@@ -4,7 +4,7 @@
 >
 > **最后更新**：2026-07-01
 >
-> **当前阶段**：Phase 0.5 - 配置系统（已完成）
+> **当前阶段**：Phase 1 - 抽象接口层（已完成）
 
 ---
 
@@ -695,7 +695,7 @@ GPU 时间线：
 ```
 Phase 0   [x] 项目脚手架                  (2026-07-02 完成)
 Phase 0.5 [x] 配置系统                    (2026-07-02 完成)
-Phase 1   [ ] 抽象接口层
+Phase 1   [x] 抽象接口层                  (2026-07-02 完成)
 Phase 2   [ ] MVP - 基础语音问答
 Phase 3   [ ] V1 - TTS + Avatar
 Phase 4   [ ] V2 - 人格系统 + 优化
@@ -714,6 +714,8 @@ Phase 4   [ ] V2 - 人格系统 + 优化
 | 2026-07-01 | 设备管理默认 XPU 回退 CPU | Intel ARC B580 兼容性保障 |
 | 2026-07-02 | Phase 0 完成：项目脚手架搭建 | 目录结构 + CLAUDE.md + .gitignore + requirements.txt |
 | 2026-07-02 | Phase 0.5 完成：配置系统 | app_config.yaml + config_loader(单例) + device(XPU/CPU) |
+| 2026-07-02 | Phase 1 完成：抽象接口层 | 5个ABC接口 + WebSocket协议(17种消息) + 连接管理器 |
+| 2026-07-02 | 协议采用 OpenAI 风格全 JSON | 音频 base64 编码，调试方便，MVP 阶段足够 |
 
 ---
 
